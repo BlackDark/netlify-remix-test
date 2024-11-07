@@ -1,0 +1,67 @@
+name: Netlify Prod
+
+# always deploy to PROD for now
+on:
+  push:
+    branches:
+      - "main"
+    # Pattern matched against refs/tags
+    tags:
+      - "*" # Push events to every tag not containing /
+  workflow_dispatch:
+
+jobs:
+  # switch to supabase
+  # migration-prod:
+  #   name: Deploy PROD Migrations
+  #   environment: production
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
+
+  #     - uses: pnpm/action-setup@v2
+  #       with:
+  #         version: latest
+
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: lts/*
+  #         cache: pnpm
+
+  #     - run: pnpm install
+
+  #     - run: pnpm db:migrate
+  #       env:
+  #         DB_URL: ${{ secrets.DB_URL }}
+
+  deploy-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - run: pnpm install
+
+      - run: pnpm build
+
+      - name: Install Netlify
+        run: pnpm install netlify-cli@17.37.2 -g
+
+      - name: Deploy to Netlify
+        id: netlify_deploy
+        run: |
+          netlify deploy \
+            --site ${{ secrets.NETLIFY_SITE_ID }} \
+            --auth ${{ secrets.NETLIFY_AUTH_TOKEN }}
